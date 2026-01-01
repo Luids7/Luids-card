@@ -221,6 +221,17 @@ body{
   height: 18px;
   opacity: .95;
 }
+/* Instagram 官方漸層 icon */
+.ig-gradient{
+  width: 18px;
+  height: 18px;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,.35));
+}
+
+/* hover 時 icon 也微微亮 */
+.btn:hover .ig-gradient{
+  filter: drop-shadow(0 3px 10px rgba(0,0,0,.45));
+}
 
 .footer{
   margin: 16px 0 0;
@@ -257,5 +268,6 @@ body{
   .btn{ padding: 14px 14px; font-size: 16px; }
   .app-icon{ width: 20px; height: 20px; }
 }
+
 
 
