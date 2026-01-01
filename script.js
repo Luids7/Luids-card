@@ -1,53 +1,22 @@
-/* =========================
-   ✅ 0) 你的設定（只要改這裡）
-========================= */
+// ===== Settings (改這裡就好) =====
+const DISCORD_USER_ID = "1180760727942860820"; // 你的 Discord User ID
+const LINKS = {
+  discordInvite: "https://discord.gg/WKqDca9Cjp",
+  github: "https://github.com",
+  instagram: "https://instagram.com/rexvamutrruv1",
+};
 
-// 1) Discord 使用者 ID（不是邀請碼！）
-// 把這行換成你的數字 ID，例如： "123456789012345678"
-const DISCORD_USER_ID = "1180760727942860820";
-
-// 2) 預設語言： "zh" 或 "en"
-const DEFAULT_LANG = "zh";
-
-/* =========================
-   ✅ 1) 年份
-========================= */
-const y = document.getElementById("y");
-if (y) y.textContent = new Date().getFullYear();
-
-/* =========================
-   ✅ 2) Ripple 效果
-========================= */
-function addRipple(el, x, y){
-  const rect = el.getBoundingClientRect();
-  const size = Math.max(rect.width, rect.height) * 1.2;
-  const ink = document.createElement("span");
-  ink.className = "ripple-ink";
-  ink.style.width = ink.style.height = `${size}px`;
-  ink.style.left = `${x - rect.left - size/2}px`;
-  ink.style.top  = `${y - rect.top  - size/2}px`;
-  el.appendChild(ink);
-  ink.addEventListener("animationend", () => ink.remove());
-}
-
-document.addEventListener("pointerdown", (e) => {
-  const target = e.target.closest(".ripple");
-  if (!target) return;
-  addRipple(target, e.clientX, e.clientY);
-});
-
-/* =========================
-   ✅ 3) 中/英切換（含記憶）
-========================= */
+// ===== i18n =====
 const I18N = {
   zh: {
     bio: "數位創作者｜Discord 社群經營",
-    discord: "Discord",
-    all_links: "All links",
-    back: "← 返回",
-    links_desc: "所有個人連結一覽",
     discord_server: "Discord 社群",
     github_profile: "GitHub 個人頁",
+    instagram_profile: "Instagram",
+    all_links: "All links",
+    back: "← 返回",
+    links_title: "All links",
+    links_desc: "所有個人連結一覽",
     status_online: "線上",
     status_idle: "閒置",
     status_dnd: "請勿打擾",
@@ -55,12 +24,13 @@ const I18N = {
   },
   en: {
     bio: "Digital creator · Discord community",
-    discord: "Discord",
-    all_links: "All links",
-    back: "← Back",
-    links_desc: "All links in one place",
     discord_server: "Discord server",
     github_profile: "GitHub profile",
+    instagram_profile: "Instagram",
+    all_links: "All links",
+    back: "← Back",
+    links_title: "All links",
+    links_desc: "All links in one place",
     status_online: "Online",
     status_idle: "Idle",
     status_dnd: "Do not disturb",
@@ -69,83 +39,136 @@ const I18N = {
 };
 
 function getLang(){
-  return localStorage.getItem("lang") || DEFAULT_LANG;
+  return localStorage.getItem("lang") || "zh";
 }
+
 function setLang(lang){
   localStorage.setItem("lang", lang);
-  document.documentElement.lang = (lang === "zh") ? "zh-Hant" : "en";
-  document.querySelectorAll("[data-i18n]").forEach(el => {
-    const key = el.getAttribute("data-i18n");
-    if (I18N[lang] && I18N[lang][key]) el.textContent = I18N[lang][key];
-  });
-  // 同步 status 文字
-  updatePresenceText();
+  applyI18n();
 }
 
-const langBtn = document.getElementById("langBtn");
-if (langBtn){
-  langBtn.addEventListener("click", () => {
-    const next = getLang() === "zh" ? "en" : "zh";
-    setLang(next);
-  });
-}
-setLang(getLang());
-
-/* =========================
-   ✅ 4) Discord 真實在線狀態（Lanyard）
-   - 需要你加入 Lanyard Discord（一次）
-   - 不需要 token
-========================= */
-const presenceEl = document.getElementById("presence");
-
-let lastPresence = "offline";
-
-function mapLanyardStatus(s){
-  // Lanyard: online | idle | dnd | offline
-  if (s === "online" || s === "idle" || s === "dnd" || s === "offline") return s;
-  return "offline";
-}
-
-function updatePresenceText(){
-  if (!presenceEl) return;
+function applyI18n(){
   const lang = getLang();
-  const t = I18N[lang];
+  const dict = I18N[lang] || I18N.zh;
 
-  const textEl = presenceEl.querySelector(".status-text");
-  if (!textEl) return;
+  document.querySelectorAll("[data-i18n]").forEach(el=>{
+    const key = el.getAttribute("data-i18n");
+    if (dict[key]) el.textContent = dict[key];
+  });
 
-  const key = `status_${lastPresence}`;
-  textEl.textContent = t[key] || lastPresence;
-  presenceEl.title = `Discord: ${textEl.textContent}`;
-}
-
-async function fetchPresenceOnce(){
-  if (!presenceEl) return;
-  // 若你還沒填 ID，直接顯示離線
-  if (!DISCORD_USER_ID || DISCORD_USER_ID.includes("1180760727942860820")){
-    presenceEl.dataset.status = "offline";
-    lastPresence = "offline";
-    updatePresenceText();
-    return;
-  }
-
-  try{
-    const res = await fetch(`https://api.lanyard.rest/v1/users/${DISCORD_USER_ID}`, { cache: "no-store" });
-    if (!res.ok) throw new Error("lanyard failed");
-    const json = await res.json();
-    const status = mapLanyardStatus(json?.data?.discord_status);
-    presenceEl.dataset.status = status;
-    lastPresence = status;
-    updatePresenceText();
-  }catch(e){
-    // 失敗就維持離線（不影響網站其他功能）
-    presenceEl.dataset.status = "offline";
-    lastPresence = "offline";
-    updatePresenceText();
+  // 更新狀態字（如果已經有狀態）
+  if (window.__presenceState) {
+    renderPresence(window.__presenceState);
   }
 }
 
-// 每 20 秒更新一次（夠用又不會太頻繁）
-fetchPresenceOnce();
-setInterval(fetchPresenceOnce, 20000);
+function wireLangToggle(){
+  const btn = document.getElementById("langToggle");
+  if(!btn) return;
+  btn.addEventListener("click", ()=>{
+    setLang(getLang()==="zh" ? "en" : "zh");
+  });
+}
 
+// ===== ripple positioning =====
+function wireRipple(){
+  document.querySelectorAll(".ripple").forEach(el=>{
+    el.addEventListener("pointerdown", (e)=>{
+      const rect = el.getBoundingClientRect();
+      const rx = ((e.clientX - rect.left) / rect.width) * 100;
+      const ry = ((e.clientY - rect.top) / rect.height) * 100;
+      el.style.setProperty("--rx", rx + "%");
+      el.style.setProperty("--ry", ry + "%");
+    });
+  });
+}
+
+// ===== Discord presence via Lanyard =====
+function presenceColor(status){
+  // online / idle / dnd / offline
+  switch(status){
+    case "online": return "#22c55e"; // green
+    case "idle": return "#f59e0b";   // amber
+    case "dnd": return "#ef4444";    // red
+    default: return "#6b7280";       // gray
+  }
+}
+
+function presenceText(status){
+  const lang = getLang();
+  const dict = I18N[lang] || I18N.zh;
+  if(status === "online") return dict.status_online;
+  if(status === "idle") return dict.status_idle;
+  if(status === "dnd") return dict.status_dnd;
+  return dict.status_offline;
+}
+
+function renderPresence(status){
+  window.__presenceState = status;
+
+  const dot = document.getElementById("presenceDot");
+  const text = document.getElementById("presenceText");
+  if(!dot || !text) return;
+
+  dot.style.background = presenceColor(status);
+  text.textContent = presenceText(status);
+}
+
+function connectLanyard(){
+  // 只在首頁有狀態顯示的時候連
+  if(!document.getElementById("presenceDot")) return;
+
+  // 先顯示離線
+  renderPresence("offline");
+
+  const ws = new WebSocket("wss://api.lanyard.rest/socket");
+
+  ws.addEventListener("open", ()=>{
+    ws.send(JSON.stringify({ op: 2, d: { subscribe_to_id: DISCORD_USER_ID }}));
+  });
+
+  ws.addEventListener("message", (event)=>{
+    try{
+      const msg = JSON.parse(event.data);
+
+      // HELLO -> start heartbeats
+      if(msg.op === 1 && msg.d?.heartbeat_interval){
+        setInterval(()=>{
+          try{ ws.send(JSON.stringify({ op: 3 })); }catch{}
+        }, msg.d.heartbeat_interval);
+      }
+
+      // INIT_STATE
+      if(msg.t === "INIT_STATE"){
+        const p = msg.d;
+        if(p?.discord_status) renderPresence(p.discord_status);
+      }
+
+      // PRESENCE_UPDATE
+      if(msg.t === "PRESENCE_UPDATE"){
+        const p = msg.d;
+        if(p?.discord_status) renderPresence(p.discord_status);
+      }
+    }catch{}
+  });
+
+  ws.addEventListener("close", ()=>{
+    // 斷線就顯示離線
+    renderPresence("offline");
+  });
+
+  ws.addEventListener("error", ()=>{
+    renderPresence("offline");
+  });
+}
+
+// ===== init =====
+(function init(){
+  const yearEl = document.getElementById("year");
+  if(yearEl) yearEl.textContent = new Date().getFullYear();
+
+  wireLangToggle();
+  wireRipple();
+  applyI18n();
+  connectLanyard();
+})();
