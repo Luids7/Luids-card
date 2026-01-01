@@ -41,7 +41,7 @@ document.addEventListener("pointerdown", (e) => {
 ========================= */
 const I18N = {
   zh: {
-    bio: "一句簡介：Luidsx",
+    bio: "數位創作者｜Discord 社群經營",
     discord: "Discord",
     all_links: "All links",
     back: "← 返回",
@@ -54,7 +54,7 @@ const I18N = {
     status_offline: "離線",
   },
   en: {
-    bio: "Bio: Luidsx",
+    bio: "Digital creator · Discord community",
     discord: "Discord",
     all_links: "All links",
     back: "← Back",
